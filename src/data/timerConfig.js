@@ -3,3 +3,5 @@ export const timerConfig = {
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 };
+
+export const LONG_BREAK_INTERVAL = 4;

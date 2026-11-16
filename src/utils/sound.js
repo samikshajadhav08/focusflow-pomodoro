@@ -1,13 +1,28 @@
-export function playBell() {
-  const audioContext = new (
-    window.AudioContext || window.webkitAudioContext
-  )();
+
+let audioContext;
+
+export async function unlockAudio() {
+  const AudioContextClass =
+    window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextClass) return;
+
+  if (!audioContext) {
+    audioContext = new AudioContextClass();
+  }
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+}
+
+export async function playBell() {
+  await unlockAudio();
+
+  if (!audioContext) return;
 
   const oscillator = audioContext.createOscillator();
   const gain = audioContext.createGain();
-
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
 
   oscillator.type = "sine";
   oscillator.frequency.setValueAtTime(
@@ -16,7 +31,7 @@ export function playBell() {
   );
 
   gain.gain.setValueAtTime(
-    0.3,
+    0.25,
     audioContext.currentTime
   );
 
@@ -25,8 +40,9 @@ export function playBell() {
     audioContext.currentTime + 1.5
   );
 
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
   oscillator.start();
   oscillator.stop(audioContext.currentTime + 1.5);
-
-  oscillator.onended = () => audioContext.close();
 }

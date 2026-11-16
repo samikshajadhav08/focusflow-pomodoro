@@ -1,4 +1,3 @@
-
 import Navbar from "./components/Navbar";
 import Timer from "./components/Timer";
 import SessionSelector from "./components/SessionSelector";
@@ -17,6 +16,7 @@ function App() {
     pauseTimer,
     resetTimer,
     changeMode,
+    enableNotifications,
   } = usePomodoro();
 
   const focusMinutes = completedSessions * 25;
@@ -24,11 +24,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0B0B14]">
-
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-5 py-10">
-
         {/* Dashboard Heading */}
         <div className="mb-10">
           <h2 className="text-3xl font-bold text-white">
@@ -42,11 +40,7 @@ function App() {
 
         {/* Timer Section */}
         <div className="max-w-2xl mx-auto mb-12">
-
-          <SessionSelector
-            mode={mode}
-            changeMode={changeMode}
-          />
+          <SessionSelector mode={mode} changeMode={changeMode} />
 
           <Timer
             mode={mode}
@@ -56,13 +50,21 @@ function App() {
             pauseTimer={pauseTimer}
             resetTimer={resetTimer}
           />
-
+          <button
+            onClick={enableNotifications}
+            className="mt-5 px-5 py-3 rounded-xl
+             bg-white/10 text-white
+             hover:bg-white/20 transition"
+          >
+            Enable Notifications
+          </button>
         </div>
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2
-                        lg:grid-cols-3 gap-5 mb-8">
-
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2
+                        lg:grid-cols-3 gap-5 mb-8"
+        >
           <StatsCard
             title="Completed Sessions"
             value={completedSessions}
@@ -81,22 +83,17 @@ function App() {
             title="Daily Goal"
             value={`${Math.min(
               100,
-              Math.round((focusMinutes / dailyGoal) * 100)
+              Math.round((focusMinutes / dailyGoal) * 100),
             )}%`}
             subtitle="Progress towards your goal"
             type="goals"
           />
-
         </div>
 
         {/* Daily Progress */}
         <div className="max-w-2xl">
-          <ProgressBar
-            completed={focusMinutes}
-            target={dailyGoal}
-          />
+          <ProgressBar completed={focusMinutes} target={dailyGoal} />
         </div>
-
       </main>
     </div>
   );
