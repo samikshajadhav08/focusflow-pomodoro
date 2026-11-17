@@ -15,19 +15,17 @@ import {
   showNotification,
 } from "../utils/notifications";
 
-export function usePomodoro() {
+export function usePomodoro({ onFocusComplete } = {}) {
   const [mode, setMode] = useState("focus");
-
-  const [timeLeft, setTimeLeft] = useState(
-    timerConfig.focus
-  );
-
+  const [timeLeft, setTimeLeft] = useState(timerConfig.focus);
   const [isRunning, setIsRunning] = useState(false);
-
-  const [completedSessions, setCompletedSessions] =
-    useState(0);
+  const [completedSessions, setCompletedSessions] = useState(0);
 
   const endTimeRef = useRef(null);
+
+  // Keep the latest callback without restarting the timer
+  const onFocusCompleteRef = useRef(onFocusComplete);
+  onFocusCompleteRef.current = onFocusComplete;
 
   // Start timer
   const startTimer = async () => {
@@ -35,9 +33,7 @@ export function usePomodoro() {
 
     if (timeLeft <= 0) return;
 
-    endTimeRef.current =
-      Date.now() + timeLeft * 1000;
-
+    endTimeRef.current = Date.now() + timeLeft * 1000;
     setIsRunning(true);
   };
 
@@ -46,9 +42,7 @@ export function usePomodoro() {
     if (endTimeRef.current) {
       const remaining = Math.max(
         0,
-        Math.ceil(
-          (endTimeRef.current - Date.now()) / 1000
-        )
+        Math.ceil((endTimeRef.current - Date.now()) / 1000)
       );
 
       setTimeLeft(remaining);
@@ -58,31 +52,30 @@ export function usePomodoro() {
     endTimeRef.current = null;
   };
 
-  // Reset timer
+  // Reset current timer
   const resetTimer = () => {
     setIsRunning(false);
     endTimeRef.current = null;
     setTimeLeft(timerConfig[mode]);
   };
 
-  // Change session
+  // Change timer mode
   const changeMode = (newMode) => {
     setIsRunning(false);
     endTimeRef.current = null;
+
     setMode(newMode);
     setTimeLeft(timerConfig[newMode]);
   };
 
-  // Timer countdown
+  // Timer countdown and automatic session switching
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
       const remaining = Math.max(
         0,
-        Math.ceil(
-          (endTimeRef.current - Date.now()) / 1000
-        )
+        Math.ceil((endTimeRef.current - Date.now()) / 1000)
       );
 
       setTimeLeft(remaining);
@@ -93,14 +86,17 @@ export function usePomodoro() {
         setIsRunning(false);
         endTimeRef.current = null;
 
-        // Play bell
         playBell();
 
         if (mode === "focus") {
+          // Update task statistics
+          onFocusCompleteRef.current?.();
+
           const nextCount = completedSessions + 1;
 
           setCompletedSessions(nextCount);
 
+          // Long break after every 4 focus sessions
           const nextMode =
             nextCount % LONG_BREAK_INTERVAL === 0
               ? "longBreak"
@@ -116,6 +112,7 @@ export function usePomodoro() {
               : "Great work! Take a 5-minute break."
           );
         } else {
+          // After a break, return to focus mode
           setMode("focus");
           setTimeLeft(timerConfig.focus);
 
@@ -128,14 +125,11 @@ export function usePomodoro() {
     }, 250);
 
     return () => clearInterval(interval);
-
   }, [isRunning, mode, completedSessions]);
 
-  // Request notifications
+  // Enable browser notifications
   const enableNotifications = async () => {
-    if (!("Notification" in window)) {
-      return false;
-    }
+    if (!("Notification" in window)) return false;
 
     const permission = await Notification.requestPermission();
 
